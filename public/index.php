@@ -8,15 +8,15 @@ use Slim\Factory\AppFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$BANDWIDTH_ACCOUNT_ID = getenv("BANDWIDTH_ACCOUNT_ID");
-$BANDWIDTH_USERNAME = getenv("BANDWIDTH_USERNAME");
-$BANDWIDTH_PASSWORD = getenv("BANDWIDTH_PASSWORD");
-$BANDWIDTH_MESSAGING_APPLICATION_ID = getenv("BANDWIDTH_MESSAGING_APPLICATION_ID");
+$BW_ACCOUNT_ID = getenv("BW_ACCOUNT_ID");
+$BW_USERNAME = getenv("BW_USERNAME");
+$BW_PASSWORD = getenv("BW_PASSWORD");
+$BW_MESSAGING_APPLICATION_ID = getenv("BW_MESSAGING_APPLICATION_ID");
 
 $config = new BandwidthLib\Configuration(
     array(
-        "messagingBasicAuthUserName" => $BANDWIDTH_USERNAME,
-        "messagingBasicAuthPassword" => $BANDWIDTH_PASSWORD
+        "messagingBasicAuthUserName" => $BW_USERNAME,
+        "messagingBasicAuthPassword" => $BW_PASSWORD
     )
 );
 $client = new BandwidthLib\BandwidthClient($config);
@@ -30,17 +30,17 @@ $app->addErrorMiddleware(true, true, true);
 $messagingClient = $client->getMessaging()->getClient();
 
 $app->post('/outboundMessage', function (Request $request, Response $response) {
-  global $messagingClient, $BANDWIDTH_ACCOUNT_ID, $BANDWIDTH_MESSAGING_APPLICATION_ID;
+  global $messagingClient, $BW_ACCOUNT_ID, $BW_MESSAGING_APPLICATION_ID;
 
   $data = $request->getParsedBody();
   $body = new BandwidthLib\Messaging\Models\MessageRequest();
   $body->from = $data['from'];
   $body->to = array($data['to']);
-  $body->applicationId = $BANDWIDTH_MESSAGING_APPLICATION_ID;
+  $body->applicationId = $BW_MESSAGING_APPLICATION_ID;
   $body->text = $data['message'];
   $body->media = $data['mediaUrl'];
   try {
-      $msgResponse = $messagingClient->createMessage($BANDWIDTH_ACCOUNT_ID, $body);
+      $msgResponse = $messagingClient->createMessage($BW_ACCOUNT_ID, $body);
       $response->getBody()->write('{"Success":"Message sent successfully"}');
       return $response->withStatus(201)
         ->withHeader('Content-Type', 'application/json');
@@ -52,7 +52,7 @@ $app->post('/outboundMessage', function (Request $request, Response $response) {
 });
 
 $app->post('/messageCallback', function (Request $request, Response $response) {
-  global $messagingClient, $BANDWIDTH_ACCOUNT_ID;
+  global $messagingClient, $BW_ACCOUNT_ID;
 
   $data = $request->getBody()->getContents();
   $messagingCallbacks = \BandwidthLib\APIHelper::deserialize($data, BandwidthCallbackMessage::class, true );
@@ -90,7 +90,7 @@ $app->post('/messageCallback', function (Request $request, Response $response) {
     for ($i = 0; $i < count($messageMedia); $i++){
       $mediaId = substr($messageMedia[$i], strpos($messageMedia[$i], "media/") + 6);
       $ext = substr($mediaId, strpos($mediaId, "."));
-      $response = $messagingClient->getMedia($BANDWIDTH_ACCOUNT_ID, $mediaId);
+      $response = $messagingClient->getMedia($BW_ACCOUNT_ID, $mediaId);
       $file = fopen("media_file".$i.$ext, "wb") or die("Unable to open file");
       fwrite($file, $response->getResult());
       fclose($file);
@@ -106,7 +106,7 @@ $app->post('/messageCallback', function (Request $request, Response $response) {
 });
 
 $app->post('/mediaManagement', function (Request $request, Response $response) {
-  global $messagingClient, $BANDWIDTH_ACCOUNT_ID;
+  global $messagingClient, $BW_ACCOUNT_ID;
 
   $mediaName = "media_to_upload.jpg";
   $data = $request->getBody();
@@ -120,7 +120,7 @@ $app->post('/mediaManagement', function (Request $request, Response $response) {
   $filename = $mediaName;
   $file = fopen($filename, "rb") or die("Unable to open file");
   $contents = fread($file, filesize($filename));
-  $messagingClient->uploadMedia($BANDWIDTH_ACCOUNT_ID, "bandwidth_sample_app.jpg", strlen($contents), $contents);
+  $messagingClient->uploadMedia($BW_ACCOUNT_ID, "bandwidth_sample_app.jpg", strlen($contents), $contents);
   fclose($file);
 
   // delete local image file
