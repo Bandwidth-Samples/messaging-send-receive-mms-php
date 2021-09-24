@@ -11,6 +11,7 @@ require __DIR__ . '/../vendor/autoload.php';
 $BW_ACCOUNT_ID = getenv("BW_ACCOUNT_ID");
 $BW_USERNAME = getenv("BW_USERNAME");
 $BW_PASSWORD = getenv("BW_PASSWORD");
+$BW_NUMBER = getenv("BW_NUMBER");
 $BW_MESSAGING_APPLICATION_ID = getenv("BW_MESSAGING_APPLICATION_ID");
 
 $config = new BandwidthLib\Configuration(
@@ -29,16 +30,16 @@ $app->addErrorMiddleware(true, true, true);
 
 $messagingClient = $client->getMessaging()->getClient();
 
-$app->post('/outboundMessage', function (Request $request, Response $response) {
-  global $messagingClient, $BW_ACCOUNT_ID, $BW_MESSAGING_APPLICATION_ID;
+$app->post('/callbacks/outbound/messaging', function (Request $request, Response $response) {
+  global $messagingClient, $BW_ACCOUNT_ID, $BW_MESSAGING_APPLICATION_ID, $BW_NUMBER;
 
   $data = $request->getParsedBody();
   $body = new BandwidthLib\Messaging\Models\MessageRequest();
-  $body->from = $data['from'];
+  $body->from = $BW_NUMBER;
   $body->to = array($data['to']);
   $body->applicationId = $BW_MESSAGING_APPLICATION_ID;
-  $body->text = $data['message'];
-  $body->media = $data['mediaUrl'];
+  $body->text = $data['text'];
+  $body->media = "https://cdn2.thecatapi.com/images/MTY3ODIyMQ.jpg";
   try {
       $msgResponse = $messagingClient->createMessage($BW_ACCOUNT_ID, $body);
       $response->getBody()->write('{"Success":"Message sent successfully"}');
