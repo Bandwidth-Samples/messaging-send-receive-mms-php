@@ -18,6 +18,8 @@ $config = new BandwidthLib\Configuration(
     array(
         "messagingBasicAuthUserName" => $BW_USERNAME,
         "messagingBasicAuthPassword" => $BW_PASSWORD
+        //"environment" => BandwidthLib\Environments::CUSTOM,
+        //"baseUrl" => 'https://79fc5f8dded12bf1c7504601d1866997.m.pipedream.net'
     )
 );
 $client = new BandwidthLib\BandwidthClient($config);
@@ -39,7 +41,7 @@ $app->post('/callbacks/outbound/messaging', function (Request $request, Response
   $body->to = array($data['to']);
   $body->applicationId = $BW_MESSAGING_APPLICATION_ID;
   $body->text = $data['text'];
-  $body->media = "https://cdn2.thecatapi.com/images/MTY3ODIyMQ.jpg";
+  $body->media = array("https://cdn2.thecatapi.com/images/MTY3ODIyMQ.jpg");
   try {
       $msgResponse = $messagingClient->createMessage($BW_ACCOUNT_ID, $body);
       $response->getBody()->write('{"Success":"Message sent successfully"}');
@@ -52,7 +54,49 @@ $app->post('/callbacks/outbound/messaging', function (Request $request, Response
   }
 });
 
-$app->post('/messageCallback', function (Request $request, Response $response) {
+$app->post('/callbacks/outbound/messaging/status', function (Request $request, Response $response) {
+  
+  $data = $request->getBody()->getContents();
+  $messagingCallbacks = \BandwidthLib\APIHelper::deserialize($data, BandwidthCallbackMessage::class, true );
+  $messageCallback = array_pop($messagingCallbacks);
+  $mediaName = $messageCallback->message->media;
+
+  $type = $messageCallback->type;
+  $time = $messageCallback->time;
+  $description = $messageCallback->description;
+  $to = $messageCallback->to;
+  $message = $messageCallback->message;    // an object
+  $messageId = $messageCallback->message->id;
+  $messageTime = $messageCallback->message->time;
+  $messageTo = $messageCallback->message->to;    // an array
+  $messageFrom = $messageCallback->message->from;
+  $messageText = $messageCallback->message->text;
+  $messageApplicationId = $messageCallback->message->applicationId;
+  if (isset($messageCallback->message->media)) {
+    $messageMedia = $messageCallback->message->media;    // an array
+  } else {
+    $messageMedia = [];
+  }
+  $messageOwner = $messageCallback->message->owner;
+  $messageDirection = $messageCallback->message->direction;
+  $messageSegmentCount = $messageCallback->message->segmentCount;
+
+  if ($messageDirection == "out"){
+    $myfile = fopen("outbound_message.txt", "w") or die("Unable to open file!");
+    $txt = "Type: ".$type."\nDescription: ".$description."\nText: ".$messageText;
+    fwrite($myfile, $txt);
+    fclose($myfile);
+  } else {
+    $myfile = fopen("outbound_status.txt", "w") or die("Unable to open file!");
+    $txt = "Message type does not match endpoint. This endpoint is used for message status callbacks only.";
+    fwrite($myfile, $txt);
+    fclose($myfile);
+  }
+
+  return $response->withStatus(200);
+});
+
+$app->post('/callbacks/inbound/messaging', function (Request $request, Response $response) {
   global $messagingClient, $BW_ACCOUNT_ID;
 
   $data = $request->getBody()->getContents();
@@ -91,42 +135,17 @@ $app->post('/messageCallback', function (Request $request, Response $response) {
     for ($i = 0; $i < count($messageMedia); $i++){
       $mediaId = substr($messageMedia[$i], strpos($messageMedia[$i], "media/") + 6);
       $ext = substr($mediaId, strpos($mediaId, "."));
-      $response = $messagingClient->getMedia($BW_ACCOUNT_ID, $mediaId);
+      $mediaResponse = $messagingClient->getMedia($BW_ACCOUNT_ID, $mediaId);
       $file = fopen("media_file".$i.$ext, "wb") or die("Unable to open file");
-      fwrite($file, $response->getResult());
+      fwrite($file, $mediaResponse->getResult());
       fclose($file);
     }
   } else {
-    $myfile = fopen("outbound_message.txt", "w") or die("Unable to open file!");
-    $txt = "Type: ".$type."\nDescription: ".$description."\nText: ".$messageText;
+    $myfile = fopen("inbound_message.txt", "w") or die("Unable to open file!");
+    $txt = "Message type does not match endpoint. This endpoint is used for inbound messages only.\nOutbound message callbacks should be sent to /callbacks/outbound/messaging.";
     fwrite($myfile, $txt);
     fclose($myfile);
   }
 
   return $response->withStatus(200);
 });
-
-$app->post('/mediaManagement', function (Request $request, Response $response) {
-  global $messagingClient, $BW_ACCOUNT_ID;
-
-  $mediaName = "media_to_upload.jpg";
-  $data = $request->getBody();
-
-  // save image locally
-  $myfile = fopen($mediaName, "w") or die("Unable to open file!");
-  fwrite($myfile, $data);
-  fclose($myfile);
-
-  // upload image
-  $filename = $mediaName;
-  $file = fopen($filename, "rb") or die("Unable to open file");
-  $contents = fread($file, filesize($filename));
-  $messagingClient->uploadMedia($BW_ACCOUNT_ID, "bandwidth_sample_app.jpg", strlen($contents), $contents);
-  fclose($file);
-
-  // delete local image file
-  unlink($mediaName);
-  return $response->withStatus(200);
-});
-
-$app->run();
