@@ -149,3 +149,5 @@ $app->post('/callbacks/inbound/messaging', function (Request $request, Response 
 
   return $response->withStatus(200);
 });
+
+$app->run();
