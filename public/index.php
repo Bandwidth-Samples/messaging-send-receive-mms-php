@@ -19,7 +19,7 @@ $config = new BandwidthLib\Configuration(
         "messagingBasicAuthUserName" => $BW_USERNAME,
         "messagingBasicAuthPassword" => $BW_PASSWORD
         //"environment" => BandwidthLib\Environments::CUSTOM,
-        //"baseUrl" => 'https://79fc5f8dded12bf1c7504601d1866997.m.pipedream.net'
+        //"baseUrl" => 'https://79f1866997.m.pipedream.net'
     )
 );
 $client = new BandwidthLib\BandwidthClient($config);
