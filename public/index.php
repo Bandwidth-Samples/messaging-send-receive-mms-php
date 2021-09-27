@@ -19,7 +19,9 @@ $config = new BandwidthLib\Configuration(
         "messagingBasicAuthUserName" => $BW_USERNAME,
         "messagingBasicAuthPassword" => $BW_PASSWORD
         //"environment" => BandwidthLib\Environments::CUSTOM,
-        //"baseUrl" => 'https://79f1866997.m.pipedream.net'
+        //"baseUrl" => 'https://custom-url.com'
+        // These two lines are used for setting a custom URL to send the request to
+        // Documentation can be found [here](https://dev.bandwidth.com/sdks/php.html)
     )
 );
 $client = new BandwidthLib\BandwidthClient($config);
