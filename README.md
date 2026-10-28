@@ -1,4 +1,8 @@
 # Messaging-Send-Receive-MMS-PHP
+
+> [!IMPORTANT]
+> This sample is archived and no longer maintained. Sending and receiving both SMS and MMS is now covered by [messaging-send-receive-php](https://github.com/Bandwidth-Samples/messaging-send-receive-php).
+
 <a href="http://dev.bandwidth.com"><img src="https://s3.amazonaws.com/bwdemos/BW-VMP.png"/></a>
 </div>
 
